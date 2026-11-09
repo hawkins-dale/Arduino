@@ -1,0 +1,36 @@
+# Shared libraries (includes credentials.h and third-party libs)
+/libraries/
+
+# Credentials / secrets, in case any end up inside a sketch folder
+credentials.h
+secrets.h
+arduino_secrets.h
+*.secret
+
+# Build output (Arduino IDE 2.x, arduino-cli, PlatformIO)
+build/
+**/build/
+.pio/
+*.elf
+*.hex
+*.bin
+*.eep
+*.lst
+*.map
+*.o
+*.a
+*.d
+
+# IDE and editor state
+.vscode/
+.idea/
+.arduino15/
+*.code-workspace
+*.swp
+*~
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*

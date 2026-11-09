@@ -10,8 +10,8 @@
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
 // Custom I2C pins
-#define I2C_SDA 21  // GPIO21
-#define I2C_SCL 22  // GPIO22
+#define I2C_SDA 5  // GPIO21
+#define I2C_SCL 4  // GPIO22
 
 unsigned long myTime;
 

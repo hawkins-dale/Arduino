@@ -109,7 +109,7 @@ void setup() {
 
 void loop() {
 
-    const uint16_t port = 8000;
+    const uint16_t port = 5050;
   const char *host = "192.168.4.23";  // ip or dns
 
   term.print("Connecting to ");

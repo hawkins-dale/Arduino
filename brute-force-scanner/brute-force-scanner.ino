@@ -1,46 +1,72 @@
 #include <Wire.h>
 
-const int pins[] = {0, 2, 4, 5, 12, 13, 14, 15, 16, 17, 18, 19, 21, 22, 23, 25, 26, 27, 32, 33};
-const int NPINS = sizeof(pins) / sizeof(pins[0]);
-const int resetCandidates[] = {-1, 16, 15};   // -1 = no reset pulse
+int resetPins[] = {16, 4, 15};
+int numPins = 3;
 
-bool probe(int sda, int scl, byte addr) {
+void scanI2C(int sda, int scl) {
+  Serial.print("Testing I2C Pins -> SDA: ");
+  Serial.print(sda);
+  Serial.print(", SCL: ");
+  Serial.println(scl);
+  
   Wire.begin(sda, scl);
-  Wire.setTimeOut(5);
-  Wire.beginTransmission(addr);
-  bool ok = (Wire.endTransmission() == 0);
-  Wire.end();
-  return ok;
+  // Lower the clock speed slightly to guarantee stable discovery
+  Wire.setClock(100000); 
+
+  byte error, address;
+  int devices = 0;
+
+  for (address = 1; address < 127; address++) {
+    Wire.beginTransmission(address);
+    error = Wire.endTransmission();
+
+    if (error == 0) {
+      Serial.print("  >>> SUCCESS! Found device at address 0x");
+      if (address < 16) Serial.print("0");
+      Serial.print(address, HEX);
+      Serial.println(" <<<");
+      devices++;
+    }
+  }
+  if (devices == 0) {
+    Serial.println("  No devices found on this pair.");
+  }
 }
 
 void setup() {
   Serial.begin(115200);
-  delay(1500);
-  Serial.println("Starting brute-force I2C scan...");
-  bool found = false;
+  while (!Serial);
+  delay(2000);
+  Serial.println("\n===== BEGIN IDEASPARK ADVANCED COMBINATION SCAN =====");
 
-  for (int r : resetCandidates) {
-    if (r >= 0) {
-      pinMode(r, OUTPUT);
-      digitalWrite(r, LOW);  delay(20);
-      digitalWrite(r, HIGH); delay(50);
-      Serial.printf("Pulsed reset on GPIO %d\n", r);
-    }
-    for (int i = 0; i < NPINS; i++) {
-      for (int j = 0; j < NPINS; j++) {
-        if (i == j) continue;
-        int sda = pins[i], scl = pins[j];
-        if (sda == r || scl == r) continue;
-        for (byte addr : {0x3C, 0x3D}) {
-          if (probe(sda, scl, addr)) {
-            Serial.printf("FOUND 0x%02X  SDA=%d SCL=%d  reset=%d\n", addr, sda, scl, r);
-            found = true;
-          }
-        }
-      }
-    }
+  // Loop through each possible reset pin
+  for (int i = 0; i < numPins; i++) {
+    int pin = resetPins[i];
+    
+    // Test 1: Try driving the reset pin HIGH
+    Serial.printf("\n--- Setting GPIO %d to HIGH ---\n", pin);
+    pinMode(pin, OUTPUT);
+    digitalWrite(pin, HIGH);
+    delay(200); // Give the OLED controller time to wake up
+    
+    scanI2C(21, 22);
+    scanI2C(5, 4);
+
+    // Test 2: Try driving the reset pin LOW (Active Low Reset layout)
+    Serial.printf("\n--- Setting GPIO %d to LOW ---\n", pin);
+    digitalWrite(pin, LOW);
+    delay(200);
+    
+    scanI2C(21, 22);
+    scanI2C(5, 4);
+    
+    // Clean up pin state before checking next
+    digitalWrite(pin, HIGH); 
   }
-  Serial.println(found ? "Done." : "Done. Nothing found.");
+  
+  Serial.println("\n===== SCAN COMPLETE =====");
 }
 
-void loop() {}
+void loop() {
+  // Put nothing here so the scan only runs once at boot
+}
